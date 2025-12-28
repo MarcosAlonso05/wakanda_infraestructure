@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  # 1. The Phone Book (Starts first)
+  service_registry:
+    build: ./service_registry
+    container_name: service_registry
+    ports:
+      - "8002:8000" # Debug access on port 8002
+    networks:
+      - wakanda_network
+
+  # 2. Traffic Service (Registers itself)
+  traffic_service:
+    build: ./traffic_service
+    container_name: traffic_service
+    depends_on:
+      - service_registry # Wait for registry to start
+    networks:
+      - wakanda_network
+
+  # 3. Gateway (Reads from registry)
+  gateway_api:
+    build: ./gateway_api
+    container_name: gateway_api
+    ports:
+      - "8080:8000"
+    depends_on:
+      - service_registry
+    networks:
+      - wakanda_network
+
+networks:
+  wakanda_network:
+    driver: bridge
