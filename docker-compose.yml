@@ -1,25 +1,25 @@
-version: '3.8'
-
 services:
-  # 1. The Phone Book (Starts first)
+  # 1. Service Registry (La guía telefónica)
   service_registry:
     build: ./service_registry
     container_name: service_registry
     ports:
-      - "8002:8000" # Debug access on port 8002
+      - "8002:8000" # Acceso para debug
     networks:
       - wakanda_network
 
-  # 2. Traffic Service (Registers itself)
+  # 2. Traffic Service (El que tiene el problema)
   traffic_service:
     build: ./traffic_service
     container_name: traffic_service
     depends_on:
-      - service_registry # Wait for registry to start
+      - service_registry
+    ports:
+      - "8001:8000" # <--- ¡IMPORTANTE! Expuesto para que puedas probar /metrics tú mismo
     networks:
       - wakanda_network
 
-  # 3. Gateway (Reads from registry)
+  # 3. API Gateway (La entrada principal)
   gateway_api:
     build: ./gateway_api
     container_name: gateway_api
@@ -27,6 +27,29 @@ services:
       - "8080:8000"
     depends_on:
       - service_registry
+    environment:
+      - TRAFFIC_SERVICE_URL=http://traffic_service:8000
+    networks:
+      - wakanda_network
+
+  # 4. Prometheus (El recolector de métricas)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      # Montamos el archivo de configuración que creaste arriba
+      - ./prometheus_config/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - wakanda_network
+
+  # 5. Grafana (Los gráficos)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
     networks:
       - wakanda_network
 

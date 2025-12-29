@@ -5,26 +5,39 @@ from datetime import datetime
 import httpx
 import asyncio
 
+# 1. IMPORTAR LIBRERÍAS DE PROMETHEUS
+from prometheus_client import make_asgi_app, Counter, Histogram # <--- IMPORTANTE
+
 app = FastAPI()
 
-# Configuration for Service Discovery
+# 2. DEFINIR LAS MÉTRICAS
+REQUEST_COUNT = Counter(
+    'app_request_count', 
+    'Application Request Count',
+    ['method', 'endpoint', 'http_status']
+)
+
+REQUEST_LATENCY = Histogram(
+    'app_request_latency_seconds', 
+    'Application Request Latency',
+    ['method', 'endpoint']
+)
+
+# 3. ACTIVAR LA RUTA /metrics (Esto es lo que te faltaba seguramente)
+metrics_app = make_asgi_app()
+app.mount("/metrics", metrics_app) # <--- IMPORTANTE: Sin esto, da error 404
+
+# --- CONFIGURACIÓN DE REGISTRO (SERVICE DISCOVERY) ---
 SERVICE_NAME = "traffic_service"
-# This URL is how other containers will reach this service inside Docker network
 SERVICE_URL = "http://traffic_service:8000"
-# The URL of the Service Registry
 REGISTRY_URL = "http://service_registry:8000/register"
 
 @app.on_event("startup")
 async def register_with_registry():
-    """
-    On startup, this service attempts to register itself with the Service Registry.
-    It uses a retry loop because the Registry might be starting up at the same time.
-    """
     async with httpx.AsyncClient() as client:
-        # Try to register up to 5 times
         for attempt in range(5):
             try:
-                print(f"Attempting to register {SERVICE_NAME}...")
+                # print(f"Attempting to register {SERVICE_NAME}...")
                 response = await client.post(
                     REGISTRY_URL,
                     json={"name": SERVICE_NAME, "url": SERVICE_URL}
@@ -34,10 +47,7 @@ async def register_with_registry():
                     break
             except Exception as e:
                 print(f"Registration attempt {attempt + 1} failed: {str(e)}")
-                # Wait 2 seconds before retrying
                 await asyncio.sleep(2)
-        else:
-            print("Failed to register service after multiple attempts.")
 
 @app.get("/")
 def read_root():
@@ -45,28 +55,30 @@ def read_root():
 
 @app.get("/traffic/status")
 def get_traffic_status():
-    # Simulating data as requested in the PDF
-    intersection_id = "I-12"
-    current_time = datetime.utcnow().isoformat()
-    
-    # Simulating random vehicle count
-    vehicle_count = random.randint(50, 500)
-    
-    # Logic to determine signal phase based on vehicle count
-    signal_phase = "NS_GREEN"
-    if vehicle_count > 400:
-        signal_phase = "NS_RED_EXTENDED"
+    # 4. USAR LA MÉTRICA (Cronómetro de latencia)
+    with REQUEST_LATENCY.labels(method="GET", endpoint="/traffic/status").time():
+        
+        intersection_id = "I-12"
+        current_time = datetime.utcnow().isoformat()
+        vehicle_count = random.randint(50, 500)
+        
+        signal_phase = "NS_GREEN"
+        if vehicle_count > 400:
+            signal_phase = "NS_RED_EXTENDED"
 
-    return {
-        "intersection_id": intersection_id,
-        "timestamp": current_time,
-        "vehicle_count": vehicle_count,
-        "average_speed_kmh": 14.2,
-        "signal_phase": signal_phase,
-        "recommended_adjustment": {
-            "new_green_seconds": 45
+        # 5. USAR LA MÉTRICA (Contar la visita)
+        REQUEST_COUNT.labels(method="GET", endpoint="/traffic/status", http_status=200).inc()
+
+        return {
+            "intersection_id": intersection_id,
+            "timestamp": current_time,
+            "vehicle_count": vehicle_count,
+            "average_speed_kmh": 14.2,
+            "signal_phase": signal_phase,
+            "recommended_adjustment": {
+                "new_green_seconds": 45
+            }
         }
-    }
 
 @app.post("/traffic/adjust")
 def adjust_traffic_light(adjustment_data: dict):
