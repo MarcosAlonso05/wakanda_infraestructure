@@ -1,10 +1,7 @@
 global:
-  scrape_interval: 5s # Lee las métricas cada 5 segundos
+  scrape_interval: 5s
 
 scrape_configs:
   - job_name: 'wakanda_services'
     static_configs:
-      # Prometheus busca aquí al servicio.
-      # "traffic_service" es el nombre del contenedor en docker-compose.
-      # "8000" es el puerto INTERNO del contenedor (donde escucha Python).
       - targets: ['traffic_service:8000']

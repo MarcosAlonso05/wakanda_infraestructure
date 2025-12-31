@@ -15,7 +15,7 @@ from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 def setup_jaeger():
     resource = Resource(attributes={
-        SERVICE_NAME: "traffic_service" 
+        SERVICE_NAME: "water_service" 
     })
     
     provider = TracerProvider(resource=resource)
@@ -46,8 +46,8 @@ REQUEST_LATENCY = Histogram(
 metrics_app = make_asgi_app()
 app.mount("/metrics", metrics_app)
 
-SERVICE_NAME_REGISTRY = "traffic_service"
-SERVICE_URL = "http://traffic_service:8000"
+SERVICE_NAME_REGISTRY = "water_service"
+SERVICE_URL = "http://water_service:8000"
 REGISTRY_URL = "http://service_registry:8000/register"
 
 @app.on_event("startup")
@@ -68,33 +68,34 @@ async def register_with_registry():
 
 @app.get("/")
 def read_root():
-    return {"service": "Traffic Service", "status": "active"}
+    return {"service": "Water Service", "status": "active"}
 
-@app.get("/traffic/status")
-def get_traffic_status():
-    with REQUEST_LATENCY.labels(method="GET", endpoint="/traffic/status").time():
+@app.get("/water/status")
+def get_water_status():
+    with REQUEST_LATENCY.labels(method="GET", endpoint="/water/status").time():
         
-        intersection_id = "I-12"
-        current_time = datetime.utcnow().isoformat()
-        vehicle_count = random.randint(50, 500)
+        ph_level = round(random.uniform(6.5, 8.5), 2)
+        turbidity = random.randint(1, 15)
+        pressure_psi = random.randint(40, 80)
         
-        signal_phase = "NS_GREEN"
-        if vehicle_count > 400:
-            signal_phase = "NS_RED_EXTENDED"
+        water_status = "SAFE"
+        if ph_level < 6.5 or ph_level > 8.0:
+            water_status = "WARNING_PH_LEVEL"
+        elif turbidity > 10:
+            water_status = "WARNING_TURBIDITY_HIGH"
 
-        REQUEST_COUNT.labels(method="GET", endpoint="/traffic/status", http_status=200).inc()
+        REQUEST_COUNT.labels(method="GET", endpoint="/water/status", http_status=200).inc()
 
         return {
-            "intersection_id": intersection_id,
-            "timestamp": current_time,
-            "vehicle_count": vehicle_count,
-            "average_speed_kmh": 14.2,
-            "signal_phase": signal_phase,
-            "recommended_adjustment": {
-                "new_green_seconds": 45
-            }
+            "reservoir_id": "RES-MAIN-01",
+            "timestamp": datetime.utcnow().isoformat(),
+            "ph_level": ph_level,
+            "turbidity_ntu": turbidity,
+            "pressure_psi": pressure_psi,
+            "quality_status": water_status,
+            "chlorine_level_mg": 0.5
         }
 
-@app.post("/traffic/adjust")
-def adjust_traffic_light(adjustment_data: dict):
-    return {"status": "success", "message": "Traffic light adjusted", "data": adjustment_data}
+@app.post("/water/adjust")
+def adjust_water_light(adjustment_data: dict):
+    return {"status": "success", "message": "Water light adjusted", "data": adjustment_data}

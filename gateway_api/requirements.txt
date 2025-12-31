@@ -3,3 +3,8 @@ uvicorn
 httpx
 pybreaker
 prometheus-client
+opentelemetry-api
+opentelemetry-sdk
+opentelemetry-instrumentation-fastapi
+opentelemetry-exporter-otlp
+deprecated

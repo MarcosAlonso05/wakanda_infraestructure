@@ -1,25 +1,42 @@
 services:
-  # 1. Service Registry (La guía telefónica)
   service_registry:
     build: ./service_registry
     container_name: service_registry
     ports:
-      - "8002:8000" # Acceso para debug
+      - "8002:8000"
     networks:
       - wakanda_network
 
-  # 2. Traffic Service (El que tiene el problema)
   traffic_service:
     build: ./traffic_service
     container_name: traffic_service
     depends_on:
       - service_registry
     ports:
-      - "8001:8000" # <--- ¡IMPORTANTE! Expuesto para que puedas probar /metrics tú mismo
+      - "8001:8000"
     networks:
       - wakanda_network
 
-  # 3. API Gateway (La entrada principal)
+  energy_service:
+    build: ./energy_service
+    container_name: energy_service
+    depends_on:
+      - service_registry
+    ports:
+      - "8003:8000"
+    networks:
+      - wakanda_network
+  
+  waste_service:
+    build: ./waste_service
+    container_name: waste_service
+    depends_on:
+      - service_registry
+    ports:
+      - "8005:8000"
+    networks:
+      - wakanda_network
+
   gateway_api:
     build: ./gateway_api
     container_name: gateway_api
@@ -32,24 +49,31 @@ services:
     networks:
       - wakanda_network
 
-  # 4. Prometheus (El recolector de métricas)
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
     volumes:
-      # Montamos el archivo de configuración que creaste arriba
       - ./prometheus_config/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
     networks:
       - wakanda_network
 
-  # 5. Grafana (Los gráficos)
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
     ports:
       - "3000:3000"
+    networks:
+      - wakanda_network
+  
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "6831:6831/udp"
     networks:
       - wakanda_network
 
