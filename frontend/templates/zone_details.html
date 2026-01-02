@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Zone {{ zone_id }} Status</title>
+    <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet">
+</head>
+<body>
+    <a href="/" class="back-btn">← Back to Map</a>
+    
+    <br><br>
+    
+    <h1>Zone {{ zone_id }} - Live Status</h1>
+
+    {% if error %}
+        <div style="color: #ff4d4d; border: 1px solid #ff4d4d; padding: 10px; margin-bottom: 20px;">
+            {{ error }}
+        </div>
+    {% endif %}
+
+    <h2>🚦 Traffic Sensors</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Vehicles</th>
+                <th>Phase</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in traffic_data %}
+            <tr>
+                <td>{{ item.id }}</td>
+                <td>{{ item.vehicle_count }}</td>
+                <td>{{ item.signal_phase }}</td>
+                <td class="status-{{ item.status }}">{{ item.status }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4">No traffic data available.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

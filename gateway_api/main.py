@@ -67,6 +67,24 @@ async def get_traffic_status():
         except httpx.HTTPStatusError:
             raise HTTPException(status_code=500, detail="Traffic Service returned an error")
 
+@app.get("/traffic/zone/{zone_id}")
+async def get_traffic_zone(zone_id: str):
+    async with httpx.AsyncClient() as client:
+        try:
+            # 1. Discovery
+            registry_response = await client.get(f"{REGISTRY_URL}/discover/traffic_service")
+            if registry_response.status_code != 200:
+                raise HTTPException(status_code=503, detail="Traffic service not found")
+            
+            service_url = registry_response.json()["url"]
+            
+            # 2. Forward Request (pasando el zone_id)
+            response = await client.get(f"{service_url}/traffic/zone/{zone_id}", timeout=5.0)
+            return response.json()
+            
+        except httpx.RequestError:
+            raise HTTPException(status_code=503, detail="Traffic Service unreachable")
+
 @app.get("/energy/grid")
 async def get_energy_grid():
     async with httpx.AsyncClient() as client:

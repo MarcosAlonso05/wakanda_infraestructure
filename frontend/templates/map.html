@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Wakanda Smart City Map</title>
+    <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet">
+</head>
+<body>
+    <h1>🗺️ Wakanda City Monitor</h1>
+    <p>Select a Zone to view real-time sensors</p>
+
+    <div class="map-container">
+        <a href="/zone/A" class="zone">ZONE A (North)</a>
+        <a href="/zone/B" class="zone">ZONE B (East)</a>
+        <a href="/zone/C" class="zone">ZONE C (West)</a>
+        <a href="/zone/D" class="zone">ZONE D (South)</a>
+    </div>
+</body>
+</html>
