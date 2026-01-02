@@ -36,6 +36,26 @@ services:
       - "8005:8000"
     networks:
       - wakanda_network
+  
+  security_service:
+    build: ./security_service
+    container_name: security_service
+    depends_on:
+      - service_registry
+    ports:
+      - "8006:8000"
+    networks:
+      - wakanda_network
+
+  health_service:
+    build: ./health_service
+    container_name: health_service
+    depends_on:
+      - service_registry
+    ports:
+      - "8007:8000"
+    networks:
+      - wakanda_network
 
   gateway_api:
     build: ./gateway_api
