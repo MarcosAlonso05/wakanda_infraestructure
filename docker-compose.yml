@@ -37,6 +37,16 @@ services:
     networks:
       - wakanda_network
   
+  water_service:
+    build: ./water_service
+    container_name: water_service
+    depends_on:
+      - service_registry
+    ports:
+      - "8004:8000"
+    networks:
+      - wakanda_network
+  
   security_service:
     build: ./security_service
     container_name: security_service

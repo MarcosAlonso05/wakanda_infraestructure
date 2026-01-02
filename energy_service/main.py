@@ -1,9 +1,12 @@
+# energy_service/main.py
 from fastapi import FastAPI
 import random
 from datetime import datetime
 import httpx
 import asyncio
+from typing import List, Dict
 
+# --- METRICS & TRACING ---
 from prometheus_client import make_asgi_app, Counter, Histogram
 from opentelemetry import trace
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
@@ -12,12 +15,18 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
+# --- CONFIGURATION ---
 MY_SERVICE_NAME = "energy_service"
+SERVICE_URL = "http://energy_service:8000"
+REGISTRY_URL = "http://service_registry:8000/register"
 
+# --- PERSISTENCIA EN MEMORIA ---
+# Guardamos cuántos transformadores tiene cada zona
+ZONE_CONFIG: Dict[str, int] = {}
+
+# --- TRACING SETUP ---
 def setup_jaeger():
-    resource = Resource(attributes={
-        SERVICE_NAME: MY_SERVICE_NAME
-    })
+    resource = Resource(attributes={SERVICE_NAME: MY_SERVICE_NAME})
     provider = TracerProvider(resource=resource)
     trace.set_tracer_provider(provider)
     otlp_exporter = OTLPSpanExporter(endpoint="http://jaeger:4317", insecure=True)
@@ -28,58 +37,69 @@ setup_jaeger()
 app = FastAPI()
 FastAPIInstrumentor.instrument_app(app)
 
-REQUEST_COUNT = Counter(
-    'app_request_count', 
-    'Application Request Count',
-    ['method', 'endpoint', 'http_status']
-)
-REQUEST_LATENCY = Histogram(
-    'app_request_latency_seconds', 
-    'Application Request Latency',
-    ['method', 'endpoint']
-)
-
+# --- METRICS ---
+REQUEST_COUNT = Counter('app_request_count', 'Request Count', ['method', 'endpoint', 'http_status'])
+REQUEST_LATENCY = Histogram('app_request_latency_seconds', 'Request Latency', ['method', 'endpoint'])
 metrics_app = make_asgi_app()
 app.mount("/metrics", metrics_app)
 
-SERVICE_URL = "http://energy_service:8000"
-REGISTRY_URL = "http://service_registry:8000/register"
-
+# --- REGISTRATION ---
 @app.on_event("startup")
 async def register_with_registry():
     async with httpx.AsyncClient() as client:
         for attempt in range(5):
             try:
-                response = await client.post(
-                    REGISTRY_URL,
-                    json={"name": MY_SERVICE_NAME, "url": SERVICE_URL}
-                )
-                if response.status_code == 200:
-                    print(f"Registered {MY_SERVICE_NAME}")
-                    break
+                await client.post(REGISTRY_URL, json={"name": MY_SERVICE_NAME, "url": SERVICE_URL})
+                print(f"Registered {MY_SERVICE_NAME}")
+                break
             except Exception:
                 await asyncio.sleep(2)
+
+# --- ENDPOINTS ---
 
 @app.get("/")
 def read_root():
     return {"service": "Energy Service", "status": "active"}
 
-@app.get("/energy/grid")
-def get_energy_grid():
-    with REQUEST_LATENCY.labels(method="GET", endpoint="/energy/grid").time():
+@app.get("/energy/zone/{zone_id}")
+def get_energy_by_zone(zone_id: str):
+    """
+    Devuelve el estado de la red eléctrica en una zona.
+    Número de transformadores persistente (1-3 por zona).
+    """
+    with REQUEST_LATENCY.labels(method="GET", endpoint="/energy/zone").time():
         
-        grid_load_percent = random.randint(40, 95)
-        status = "STABLE"
-        if grid_load_percent > 90:
-            status = "CRITICAL_LOAD"
+        # 1. Configurar zona si es nueva
+        if zone_id not in ZONE_CONFIG:
+            ZONE_CONFIG[zone_id] = random.randint(1, 3)
+            print(f"DEBUG: Configured Energy Zone {zone_id} with {ZONE_CONFIG[zone_id]} transformers.")
 
-        REQUEST_COUNT.labels(method="GET", endpoint="/energy/grid", http_status=200).inc()
+        num_sensors = ZONE_CONFIG[zone_id]
+        sensors_data = []
 
-        return {
-            "grid_id": "WAKANDA-NORTH",
-            "timestamp": datetime.utcnow().isoformat(),
-            "current_load_mw": random.randint(300, 800),
-            "capacity_percent": grid_load_percent,
-            "status": status,
-            "renewable_contribution": "45%"
-        }
+        # 2. Generar datos
+        for i in range(1, num_sensors + 1):
+            transformer_id = f"E-TR-{zone_id}-0{i}"
+            
+            # Simulación de carga
+            load_percent = random.randint(30, 98)
+            voltage = random.randint(215, 245) # 230V standard +/-
+            
+            status = "STABLE"
+            if load_percent > 90:
+                status = "CRITICAL_OVERLOAD"
+            elif voltage < 220:
+                status = "WARNING_LOW_VOLTAGE"
+
+            sensors_data.append({
+                "id": transformer_id,
+                "zone": zone_id,
+                "timestamp": datetime.utcnow().isoformat(),
+                "load_percent": load_percent,
+                "voltage_v": voltage,
+                "status": status,
+                "source": "RENEWABLE_MIX"
+            })
+
+        REQUEST_COUNT.labels(method="GET", endpoint="/energy/zone", http_status=200).inc()
+        return sensors_data

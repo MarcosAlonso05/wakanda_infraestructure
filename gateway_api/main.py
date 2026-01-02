@@ -105,6 +105,24 @@ async def get_energy_grid():
         except httpx.RequestError:
             raise HTTPException(status_code=503, detail="Energy Service unreachable")
 
+@app.get("/energy/zone/{zone_id}")
+async def get_energy_zone(zone_id: str):
+    async with httpx.AsyncClient() as client:
+        try:
+            # 1. Discovery
+            registry_response = await client.get(f"{REGISTRY_URL}/discover/energy_service")
+            if registry_response.status_code != 200:
+                raise HTTPException(status_code=503, detail="Energy service not found")
+            
+            service_url = registry_response.json()["url"]
+            
+            # 2. Forward Request
+            response = await client.get(f"{service_url}/energy/zone/{zone_id}", timeout=5.0)
+            return response.json()
+            
+        except httpx.RequestError:
+            raise HTTPException(status_code=503, detail="Energy Service unreachable")
+
 @app.get("/water/status")
 async def get_water_status():
     async with httpx.AsyncClient() as client:
@@ -121,6 +139,24 @@ async def get_water_status():
         except httpx.RequestError:
             raise HTTPException(status_code=503, detail="Water Service unreachable")
         
+@app.get("/water/zone/{zone_id}")
+async def get_water_zone(zone_id: str):
+    async with httpx.AsyncClient() as client:
+        try:
+            # 1. Discovery
+            registry_response = await client.get(f"{REGISTRY_URL}/discover/water_service")
+            if registry_response.status_code != 200:
+                raise HTTPException(status_code=503, detail="Water service not found")
+            
+            service_url = registry_response.json()["url"]
+            
+            # 2. Forward Request
+            response = await client.get(f"{service_url}/water/zone/{zone_id}", timeout=5.0)
+            return response.json()
+            
+        except httpx.RequestError:
+            raise HTTPException(status_code=503, detail="Water Service unreachable")
+
 @app.get("/waste/status")
 async def get_waste_status():
     async with httpx.AsyncClient() as client:
@@ -136,7 +172,25 @@ async def get_waste_status():
             
         except httpx.RequestError:
             raise HTTPException(status_code=503, detail="Waste Service unreachable")
-        
+
+@app.get("/waste/zone/{zone_id}")
+async def get_waste_zone(zone_id: str):
+    async with httpx.AsyncClient() as client:
+        try:
+            # 1. Discovery
+            registry_response = await client.get(f"{REGISTRY_URL}/discover/waste_service")
+            if registry_response.status_code != 200:
+                raise HTTPException(status_code=503, detail="Waste service not found")
+            
+            service_url = registry_response.json()["url"]
+            
+            # 2. Forward Request
+            response = await client.get(f"{service_url}/waste/zone/{zone_id}", timeout=5.0)
+            return response.json()
+            
+        except httpx.RequestError:
+            raise HTTPException(status_code=503, detail="Waste Service unreachable")
+
 @app.get("/security/status")
 async def get_security_status():
     async with httpx.AsyncClient() as client:
@@ -155,6 +209,24 @@ async def get_security_status():
         except httpx.RequestError:
             raise HTTPException(status_code=503, detail="Security Service unreachable")
 
+@app.get("/security/zone/{zone_id}")
+async def get_security_zone(zone_id: str):
+    async with httpx.AsyncClient() as client:
+        try:
+            # 1. Discovery
+            registry_response = await client.get(f"{REGISTRY_URL}/discover/security_service")
+            if registry_response.status_code != 200:
+                raise HTTPException(status_code=503, detail="Security service not found")
+            
+            service_url = registry_response.json()["url"]
+            
+            # 2. Forward Request
+            response = await client.get(f"{service_url}/security/zone/{zone_id}", timeout=5.0)
+            return response.json()
+            
+        except httpx.RequestError:
+            raise HTTPException(status_code=503, detail="Security Service unreachable")
+
 @app.get("/health/status")
 async def get_health_status():
     async with httpx.AsyncClient() as client:
@@ -168,6 +240,24 @@ async def get_health_status():
             
             # 2. Forward Request
             response = await client.get(f"{service_url}/health/status", timeout=5.0)
+            return response.json()
+            
+        except httpx.RequestError:
+            raise HTTPException(status_code=503, detail="Health Service unreachable")
+        
+@app.get("/health/zone/{zone_id}")
+async def get_health_zone(zone_id: str):
+    async with httpx.AsyncClient() as client:
+        try:
+            # 1. Discovery
+            registry_response = await client.get(f"{REGISTRY_URL}/discover/health_service")
+            if registry_response.status_code != 200:
+                raise HTTPException(status_code=503, detail="Health service not found")
+            
+            service_url = registry_response.json()["url"]
+            
+            # 2. Forward Request
+            response = await client.get(f"{service_url}/health/zone/{zone_id}", timeout=5.0)
             return response.json()
             
         except httpx.RequestError:

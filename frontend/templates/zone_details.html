@@ -9,38 +9,121 @@
     
     <br><br>
     
-    <h1>Zone {{ zone_id }} - Live Status</h1>
+    <h1>Zone {{ zone_id }} - Integrated Dashboard</h1>
 
-    {% if error %}
-        <div style="color: #ff4d4d; border: 1px solid #ff4d4d; padding: 10px; margin-bottom: 20px;">
-            {{ error }}
+    {% if errors %}
+        <div class="error-container">
+            <strong>System Alerts:</strong>
+            <ul>
+                {% for err in errors %}
+                    <li>{{ err }}</li>
+                {% endfor %}
+            </ul>
         </div>
     {% endif %}
 
-    <h2>🚦 Traffic Sensors</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Vehicles</th>
-                <th>Phase</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in traffic_data %}
-            <tr>
-                <td>{{ item.id }}</td>
-                <td>{{ item.vehicle_count }}</td>
-                <td>{{ item.signal_phase }}</td>
-                <td class="status-{{ item.status }}">{{ item.status }}</td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="4">No traffic data available.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="dashboard-grid">
+        
+        <div class="card">
+            <h2>🚦 Traffic Control</h2>
+            <table>
+                <thead><tr><th>ID</th><th>Vehicles</th><th>Status</th></tr></thead>
+                <tbody>
+                    {% for item in data.traffic %}
+                    <tr>
+                        <td>{{ item.id }}</td>
+                        <td>{{ item.vehicle_count }}</td>
+                        <td class="status-{{ item.status }}">{{ item.status }}</td>
+                    </tr>
+                    {% else %}<tr><td colspan="3">No sensors detected</td></tr>{% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>⚡ Smart Grid</h2>
+            <table>
+                <thead><tr><th>ID</th><th>Load</th><th>Voltage</th><th>Status</th></tr></thead>
+                <tbody>
+                    {% for item in data.energy %}
+                    <tr>
+                        <td>{{ item.id }}</td>
+                        <td>{{ item.load_percent }}%</td>
+                        <td>{{ item.voltage_v }}V</td>
+                        <td class="status-{{ item.status }}">{{ item.status }}</td>
+                    </tr>
+                    {% else %}<tr><td colspan="4">No data</td></tr>{% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>💧 Water Quality</h2>
+            <table>
+                <thead><tr><th>ID</th><th>pH</th><th>Turbidity</th><th>Status</th></tr></thead>
+                <tbody>
+                    {% for item in data.water %}
+                    <tr>
+                        <td>{{ item.id }}</td>
+                        <td>{{ item.ph_level }}</td>
+                        <td>{{ item.turbidity_ntu }}</td>
+                        <td class="status-{{ item.status }}">{{ item.status }}</td>
+                    </tr>
+                    {% else %}<tr><td colspan="4">No data</td></tr>{% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>🗑️ Waste Management</h2>
+            <table>
+                <thead><tr><th>ID</th><th>Type</th><th>Fill %</th><th>Status</th></tr></thead>
+                <tbody>
+                    {% for item in data.waste %}
+                    <tr>
+                        <td>{{ item.id }}</td>
+                        <td>{{ item.type }}</td>
+                        <td>{{ item.fill_level_percent }}%</td>
+                        <td class="status-{{ item.status }}">{{ item.status }}</td>
+                    </tr>
+                    {% else %}<tr><td colspan="4">No data</td></tr>{% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>👮 CCTV Security</h2>
+            <table>
+                <thead><tr><th>ID</th><th>People</th><th>Status</th></tr></thead>
+                <tbody>
+                    {% for item in data.security %}
+                    <tr>
+                        <td>{{ item.id }}</td>
+                        <td>{{ item.people_detected }}</td>
+                        <td class="status-{{ item.status }}">{{ item.status }}</td>
+                    </tr>
+                    {% else %}<tr><td colspan="3">No cameras</td></tr>{% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>🚑 Health Units</h2>
+            <table>
+                <thead><tr><th>ID</th><th>ICU Occ</th><th>Ambulance</th><th>Status</th></tr></thead>
+                <tbody>
+                    {% for item in data.health %}
+                    <tr>
+                        <td>{{ item.id }}</td>
+                        <td>{{ item.icu_occupancy_percent }}%</td>
+                        <td>{{ item.available_ambulances }}</td>
+                        <td class="status-{{ item.status }}">{{ item.status }}</td>
+                    </tr>
+                    {% else %}<tr><td colspan="4">No units</td></tr>{% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
 </body>
 </html>
