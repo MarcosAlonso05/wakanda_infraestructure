@@ -1,4 +1,3 @@
-# energy_service/main.py
 from fastapi import FastAPI
 import random
 from datetime import datetime
@@ -6,7 +5,6 @@ import httpx
 import asyncio
 from typing import List, Dict
 
-# --- METRICS & TRACING ---
 from prometheus_client import make_asgi_app, Counter, Histogram
 from opentelemetry import trace
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
@@ -15,16 +13,12 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
-# --- CONFIGURATION ---
 MY_SERVICE_NAME = "energy_service"
 SERVICE_URL = "http://energy_service:8000"
 REGISTRY_URL = "http://service_registry:8000/register"
 
-# --- PERSISTENCIA EN MEMORIA ---
-# Guardamos cuántos transformadores tiene cada zona
 ZONE_CONFIG: Dict[str, int] = {}
 
-# --- TRACING SETUP ---
 def setup_jaeger():
     resource = Resource(attributes={SERVICE_NAME: MY_SERVICE_NAME})
     provider = TracerProvider(resource=resource)
@@ -37,13 +31,11 @@ setup_jaeger()
 app = FastAPI()
 FastAPIInstrumentor.instrument_app(app)
 
-# --- METRICS ---
 REQUEST_COUNT = Counter('app_request_count', 'Request Count', ['method', 'endpoint', 'http_status'])
 REQUEST_LATENCY = Histogram('app_request_latency_seconds', 'Request Latency', ['method', 'endpoint'])
 metrics_app = make_asgi_app()
 app.mount("/metrics", metrics_app)
 
-# --- REGISTRATION ---
 @app.on_event("startup")
 async def register_with_registry():
     async with httpx.AsyncClient() as client:
@@ -55,21 +47,14 @@ async def register_with_registry():
             except Exception:
                 await asyncio.sleep(2)
 
-# --- ENDPOINTS ---
-
 @app.get("/")
 def read_root():
     return {"service": "Energy Service", "status": "active"}
 
 @app.get("/energy/zone/{zone_id}")
 def get_energy_by_zone(zone_id: str):
-    """
-    Devuelve el estado de la red eléctrica en una zona.
-    Número de transformadores persistente (1-3 por zona).
-    """
     with REQUEST_LATENCY.labels(method="GET", endpoint="/energy/zone").time():
         
-        # 1. Configurar zona si es nueva
         if zone_id not in ZONE_CONFIG:
             ZONE_CONFIG[zone_id] = random.randint(1, 3)
             print(f"DEBUG: Configured Energy Zone {zone_id} with {ZONE_CONFIG[zone_id]} transformers.")
@@ -77,13 +62,11 @@ def get_energy_by_zone(zone_id: str):
         num_sensors = ZONE_CONFIG[zone_id]
         sensors_data = []
 
-        # 2. Generar datos
         for i in range(1, num_sensors + 1):
             transformer_id = f"E-TR-{zone_id}-0{i}"
             
-            # Simulación de carga
             load_percent = random.randint(30, 98)
-            voltage = random.randint(215, 245) # 230V standard +/-
+            voltage = random.randint(215, 245)
             
             status = "STABLE"
             if load_percent > 90:

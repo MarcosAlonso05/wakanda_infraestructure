@@ -1,4 +1,3 @@
-# water_service/main.py
 from fastapi import FastAPI
 import random
 from datetime import datetime
@@ -6,7 +5,6 @@ import httpx
 import asyncio
 from typing import List, Dict
 
-# --- METRICS & TRACING ---
 from prometheus_client import make_asgi_app, Counter, Histogram
 from opentelemetry import trace
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
@@ -15,16 +13,12 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
-# --- CONFIGURATION ---
 MY_SERVICE_NAME = "water_service"
 SERVICE_URL = "http://water_service:8000"
 REGISTRY_URL = "http://service_registry:8000/register"
 
-# --- MEMORY PERSISTENCE (The "Same Idea") ---
-# Keeps track of how many water sensors exist in each zone
 ZONE_CONFIG: Dict[str, int] = {}
 
-# --- TRACING SETUP ---
 def setup_jaeger():
     resource = Resource(attributes={SERVICE_NAME: MY_SERVICE_NAME})
     provider = TracerProvider(resource=resource)
@@ -37,13 +31,11 @@ setup_jaeger()
 app = FastAPI()
 FastAPIInstrumentor.instrument_app(app)
 
-# --- METRICS ---
 REQUEST_COUNT = Counter('app_request_count', 'Request Count', ['method', 'endpoint', 'http_status'])
 REQUEST_LATENCY = Histogram('app_request_latency_seconds', 'Request Latency', ['method', 'endpoint'])
 metrics_app = make_asgi_app()
 app.mount("/metrics", metrics_app)
 
-# --- REGISTRATION ---
 @app.on_event("startup")
 async def register_with_registry():
     async with httpx.AsyncClient() as client:
@@ -55,34 +47,24 @@ async def register_with_registry():
             except Exception:
                 await asyncio.sleep(2)
 
-# --- ENDPOINTS ---
-
 @app.get("/")
 def read_root():
     return {"service": "Water Quality Service", "status": "active"}
 
 @app.get("/water/zone/{zone_id}")
 def get_water_by_zone(zone_id: str):
-    """
-    Returns water sensors for a specific zone.
-    The number of sensors is randomized once (1-4) and persisted.
-    """
     with REQUEST_LATENCY.labels(method="GET", endpoint="/water/zone").time():
         
-        # 1. Check if zone is already configured
         if zone_id not in ZONE_CONFIG:
-            # Water infrastructure is sparse, so 1 to 4 sensors per zone
             ZONE_CONFIG[zone_id] = random.randint(1, 4)
             print(f"DEBUG: Configured Water Zone {zone_id} with {ZONE_CONFIG[zone_id]} sensors.")
 
         num_sensors = ZONE_CONFIG[zone_id]
         sensors_data = []
 
-        # 2. Generate status for each sensor
         for i in range(1, num_sensors + 1):
             sensor_id = f"W-{zone_id}-0{i}"
             
-            # Random simulation logic
             ph_level = round(random.uniform(6.5, 8.5), 2)
             turbidity = random.randint(1, 15)
             pressure_psi = random.randint(40, 80)

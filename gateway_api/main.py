@@ -71,14 +71,12 @@ async def get_traffic_status():
 async def get_traffic_zone(zone_id: str):
     async with httpx.AsyncClient() as client:
         try:
-            # 1. Discovery
             registry_response = await client.get(f"{REGISTRY_URL}/discover/traffic_service")
             if registry_response.status_code != 200:
                 raise HTTPException(status_code=503, detail="Traffic service not found")
             
             service_url = registry_response.json()["url"]
             
-            # 2. Forward Request (pasando el zone_id)
             response = await client.get(f"{service_url}/traffic/zone/{zone_id}", timeout=5.0)
             return response.json()
             
@@ -109,14 +107,12 @@ async def get_energy_grid():
 async def get_energy_zone(zone_id: str):
     async with httpx.AsyncClient() as client:
         try:
-            # 1. Discovery
             registry_response = await client.get(f"{REGISTRY_URL}/discover/energy_service")
             if registry_response.status_code != 200:
                 raise HTTPException(status_code=503, detail="Energy service not found")
             
             service_url = registry_response.json()["url"]
             
-            # 2. Forward Request
             response = await client.get(f"{service_url}/energy/zone/{zone_id}", timeout=5.0)
             return response.json()
             
@@ -143,14 +139,12 @@ async def get_water_status():
 async def get_water_zone(zone_id: str):
     async with httpx.AsyncClient() as client:
         try:
-            # 1. Discovery
             registry_response = await client.get(f"{REGISTRY_URL}/discover/water_service")
             if registry_response.status_code != 200:
                 raise HTTPException(status_code=503, detail="Water service not found")
             
             service_url = registry_response.json()["url"]
             
-            # 2. Forward Request
             response = await client.get(f"{service_url}/water/zone/{zone_id}", timeout=5.0)
             return response.json()
             
@@ -177,14 +171,12 @@ async def get_waste_status():
 async def get_waste_zone(zone_id: str):
     async with httpx.AsyncClient() as client:
         try:
-            # 1. Discovery
             registry_response = await client.get(f"{REGISTRY_URL}/discover/waste_service")
             if registry_response.status_code != 200:
                 raise HTTPException(status_code=503, detail="Waste service not found")
             
             service_url = registry_response.json()["url"]
             
-            # 2. Forward Request
             response = await client.get(f"{service_url}/waste/zone/{zone_id}", timeout=5.0)
             return response.json()
             
@@ -195,14 +187,12 @@ async def get_waste_zone(zone_id: str):
 async def get_security_status():
     async with httpx.AsyncClient() as client:
         try:
-            # 1. Discovery
             registry_response = await client.get(f"{REGISTRY_URL}/discover/security_service")
             if registry_response.status_code != 200:
                 raise HTTPException(status_code=503, detail="Security service not found")
             
             service_url = registry_response.json()["url"]
             
-            # 2. Forward Request
             response = await client.get(f"{service_url}/security/status", timeout=5.0)
             return response.json()
             
@@ -213,14 +203,12 @@ async def get_security_status():
 async def get_security_zone(zone_id: str):
     async with httpx.AsyncClient() as client:
         try:
-            # 1. Discovery
             registry_response = await client.get(f"{REGISTRY_URL}/discover/security_service")
             if registry_response.status_code != 200:
                 raise HTTPException(status_code=503, detail="Security service not found")
             
             service_url = registry_response.json()["url"]
             
-            # 2. Forward Request
             response = await client.get(f"{service_url}/security/zone/{zone_id}", timeout=5.0)
             return response.json()
             
@@ -231,14 +219,12 @@ async def get_security_zone(zone_id: str):
 async def get_health_status():
     async with httpx.AsyncClient() as client:
         try:
-            # 1. Discovery
             registry_response = await client.get(f"{REGISTRY_URL}/discover/health_service")
             if registry_response.status_code != 200:
                 raise HTTPException(status_code=503, detail="Health service not found")
             
             service_url = registry_response.json()["url"]
             
-            # 2. Forward Request
             response = await client.get(f"{service_url}/health/status", timeout=5.0)
             return response.json()
             
@@ -249,14 +235,12 @@ async def get_health_status():
 async def get_health_zone(zone_id: str):
     async with httpx.AsyncClient() as client:
         try:
-            # 1. Discovery
             registry_response = await client.get(f"{REGISTRY_URL}/discover/health_service")
             if registry_response.status_code != 200:
                 raise HTTPException(status_code=503, detail="Health service not found")
             
             service_url = registry_response.json()["url"]
             
-            # 2. Forward Request
             response = await client.get(f"{service_url}/health/zone/{zone_id}", timeout=5.0)
             return response.json()
             
