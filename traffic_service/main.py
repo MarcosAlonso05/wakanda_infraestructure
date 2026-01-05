@@ -53,10 +53,6 @@ def read_root():
 
 @app.get("/traffic/zone/{zone_id}")
 def get_traffic_by_zone(zone_id: str):
-    """
-    Devuelve sensores para una zona.
-    El número de sensores se decide la primera vez y se mantiene fijo.
-    """
     with REQUEST_LATENCY.labels(method="GET", endpoint="/traffic/zone").time():
         
         if zone_id not in ZONE_CONFIG:
